@@ -5,7 +5,7 @@ import pygame
 import requests
 
 coords1, coords2, scale = map(float, input().split())
-map_request = f"http://static-maps.yandex.ru/1.x/?ll={coords1},{coords2}&spn={scale},{scale}&l=sat"
+map_request = f"http://static-maps.yandex.ru/1.x/?ll={coords1},{coords2}&z={int(scale)}&l=sat"
 response = requests.get(map_request)
 
 if not response:
