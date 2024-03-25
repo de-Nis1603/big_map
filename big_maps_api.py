@@ -81,7 +81,7 @@ while running:
                 screen.blit(pygame.image.load(map_file), (0, 0))
                 pygame.display.flip()
             """
-            if event.key == pygame.K_BACKSPACE:
+            if event.key == pygame.K_TAB:
                 if card_type == 'map':
                     card_type = 'sat'
                 elif card_type == 'sat':
