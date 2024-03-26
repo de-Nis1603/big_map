@@ -9,7 +9,7 @@ ze_dict = [3000, 3000, 3000, 1000, 700, 300, 200, 90, 40, 20, 9, 5, 2, 1, 0.6, 0
 coords1, coords2, scale = map(float, input().split())
 card_type = 'map'
 def get_picture(coords1, coords2, scale, card_type):
-    map_request = f"http://static-maps.yandex.ru/1.x/?ll={coords1},{coords2}&z={int(scale)}&l={card_type}"
+    map_request = f"http://static-maps.yandex.ru/1.x/?ll={coords1},{coords2}&spn={scale},{scale}&l={card_type}"
     response = requests.get(map_request)
     map_file = "map.png"
     with open(map_file, "wb") as file:
@@ -17,7 +17,7 @@ def get_picture(coords1, coords2, scale, card_type):
     return map_file
 
 def get_picture_with_pointer(coords1, coords2, scale, card_type):
-    map_request = f"http://static-maps.yandex.ru/1.x/?ll={coords1},{coords2}&z={int(scale)}&l={card_type}&pt={coords1},{coords2},pm2rdm"
+    map_request = f"http://static-maps.yandex.ru/1.x/?ll={coords1},{coords2}&spn={scale},{scale}&l={card_type}&pt={coords1},{coords2},pm2rdm"
     response = requests.get(map_request)
     map_file = "map.png"
     with open(map_file, "wb") as file:
@@ -86,33 +86,29 @@ while running:
             running = False
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_PAGEDOWN:
-                if scale > 1:
-                    scale -= 1
+                if scale > 0:
+                    scale /= 2
                     map_file = get_picture(coords1, coords2, scale, card_type)
             if event.key == pygame.K_PAGEUP:
-                try:
-                    map_file = get_picture(coords1, coords2, scale + 1, card_type)
-                    scale += 1
-                except Exception:
-                    scale -= 1
-            """
+                if scale <= 45:
+                    map_file = get_picture(coords1, coords2, scale * 2, card_type)
+                    scale *= 2
             if event.key == pygame.K_UP:
-                print('up')
-                print(coords2)
-                coords2 = min(coords2 + 8 * ze_dict[int(scale)] / 111, 90)
-                print(coords2)
-                map_file = get_picture(coords1, coords2, scale)
-                screen.blit(pygame.image.load(map_file), (0, 0))
-                pygame.display.flip()
+                coords2 = min(coords2 + scale, 90 - scale)
+                map_file = get_picture(coords1, coords2, scale, card_type)
             if event.key == pygame.K_DOWN:
-                print('down')
-                print(coords2)
-                coords2 = max(coords2 - 8 * ze_dict[int(scale)] / 111, -90)
-                print(coords2)
-                map_file = get_picture(coords1, coords2, scale)
-                screen.blit(pygame.image.load(map_file), (0, 0))
-                pygame.display.flip()
-            """
+                coords2 = max(coords2 - scale, -90 + scale)
+                map_file = get_picture(coords1, coords2, scale, card_type)
+            if event.key == pygame.K_LEFT:
+                coords1 -= scale
+                if coords1 < -180:
+                    coords1 += 360
+                map_file = get_picture(coords1, coords2, scale, card_type)
+            if event.key == pygame.K_RIGHT:
+                coords1 += scale
+                if coords1 > 180:
+                    coords1 = coords1 - 360
+                map_file = get_picture(coords1, coords2, scale, card_type)
             if event.key == pygame.K_TAB:
                 if card_type == 'map':
                     card_type = 'sat'
