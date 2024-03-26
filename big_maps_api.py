@@ -1,14 +1,11 @@
 import os
-import sys
 import math
 import pygame
 import requests
 
 global point_coords1, point_coords2
-ze_dict = [3000, 3000, 3000, 1000, 700, 300, 200, 90, 40, 20, 9, 5, 2, 1, 0.6, 0.3, 0.1, 0.07, 0.04, 0.02, 0.009, 0.005]
 point_coords1, point_coords2 = None, None
 coords1, coords2, scale = map(float, input().split())
-scale = float(scale)
 card_type = 'map'
 def get_picture(coords1, coords2, scale, card_type):
     if point_coords1:
@@ -74,8 +71,10 @@ pygame.init()
 screen = pygame.display.set_mode((600, 450))
 font = pygame.font.Font(None, 32)
 input_box = pygame.Rect(10, 10, 140, 32)
+cancel_box = pygame.Rect(10, 50, 90, 32)
 color_inactive = pygame.Color('lightskyblue3')
 color_active = pygame.Color('dodgerblue2')
+color2 = pygame.Color('firebrick')
 color = color_inactive
 active = False
 text = ''
@@ -127,10 +126,13 @@ while running:
             if input_box.collidepoint(event.pos):
                 # Toggle the active variable.
                 active = not active
+                color = color_active if active else color_inactive
+            elif cancel_box.collidepoint(event.pos):
+                point_coords1, point_coords2 = None, None
+                text = ''
+                map_file = get_picture(coords1, coords2, scale, card_type)
             else:
                 active = False
-            # Change the current color of the input box.
-            color = color_active if active else color_inactive
         if event.type == pygame.KEYDOWN:
             if active:
                 if event.key == pygame.K_KP_ENTER:
@@ -144,14 +146,17 @@ while running:
                     text += event.unicode
     # Render the current text.
     txt_surface = font.render(text, True, color)
+    cancel_surface = font.render('Сброс', True, color2)
     # Resize the box if the text is too long.
     width = max(200, txt_surface.get_width() + 10)
     input_box.w = width
     # Blit the text.
     screen.blit(pygame.image.load(map_file), (0, 0))
+    screen.blit(cancel_surface, (cancel_box.x + 5, cancel_box.y + 5))
     screen.blit(txt_surface, (input_box.x + 5, input_box.y + 5))
     # Blit the input_box rect.
     pygame.draw.rect(screen, color, input_box, 2)
+    pygame.draw.rect(screen, color2, cancel_box, 2)
     pygame.display.flip()
 pygame.quit()
 
