@@ -4,12 +4,17 @@ import math
 import pygame
 import requests
 
+global point_coords1, point_coords2
 ze_dict = [3000, 3000, 3000, 1000, 700, 300, 200, 90, 40, 20, 9, 5, 2, 1, 0.6, 0.3, 0.1, 0.07, 0.04, 0.02, 0.009, 0.005]
-
+point_coords1, point_coords2 = None, None
 coords1, coords2, scale = map(float, input().split())
+scale = float(scale)
 card_type = 'map'
 def get_picture(coords1, coords2, scale, card_type):
-    map_request = f"http://static-maps.yandex.ru/1.x/?ll={coords1},{coords2}&spn={scale},{scale}&l={card_type}"
+    if point_coords1:
+        map_request = f"http://static-maps.yandex.ru/1.x/?ll={coords1},{coords2}&spn={scale},{scale}&l={card_type}&pt={point_coords1},{point_coords2},pm2rdm"
+    else:
+        map_request = f"http://static-maps.yandex.ru/1.x/?ll={coords1},{coords2}&spn={scale},{scale}&l={card_type}"
     response = requests.get(map_request)
     map_file = "map.png"
     with open(map_file, "wb") as file:
@@ -43,7 +48,7 @@ def get_picture_from_name(toponym_to_find, scale, card_type):
     toponym_coodrinates = toponym["Point"]["pos"]
     # Долгота и широта:
     toponym_longitude, toponym_lattitude = toponym_coodrinates.split(" ")
-    return get_picture_with_pointer(toponym_longitude, toponym_lattitude, scale, card_type), toponym_longitude, toponym_lattitude
+    return get_picture_with_pointer(toponym_longitude, toponym_lattitude, scale, card_type), float(toponym_longitude), float(toponym_lattitude)
 
 def lonlat_distance(a, b):
 
@@ -130,6 +135,8 @@ while running:
             if active:
                 if event.key == pygame.K_KP_ENTER:
                     map_file, coords1, coords2 = get_picture_from_name(text, scale, card_type)
+                    point_coords1 = coords1
+                    point_coords2 = coords2
                     text = ''
                 elif event.key == pygame.K_BACKSPACE:
                     text = text[:-1]
