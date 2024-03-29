@@ -39,15 +39,20 @@ def get_picture_from_name(toponym_to_find, scale, card_type):
         pass
     # Преобразуем ответ в json-объект
     json_response = response.json()
+    print(json_response)
     # Получаем первый топоним из ответа геокодера.
     toponym = json_response["response"]["GeoObjectCollection"][
         "featureMember"][0]["GeoObject"]
     toponym_address = toponym["metaDataProperty"]["GeocoderMetaData"]["text"]
+    try:
+        toponym_index = toponym["metaDataProperty"]["GeocoderMetaData"]["Address"]['postal_code']
+    except Exception:
+        toponym_index = 'не найден'
     # Координаты центра топонима:
     toponym_coodrinates = toponym["Point"]["pos"]
     # Долгота и широта:
     toponym_longitude, toponym_lattitude = toponym_coodrinates.split(" ")
-    return get_picture_with_pointer(toponym_longitude, toponym_lattitude, scale, card_type), float(toponym_longitude), float(toponym_lattitude), toponym_address
+    return get_picture_with_pointer(toponym_longitude, toponym_lattitude, scale, card_type), float(toponym_longitude), float(toponym_lattitude), toponym_address, toponym_index
 
 def lonlat_distance(a, b):
 
@@ -75,13 +80,17 @@ font = pygame.font.Font(None, 32)
 input_box = pygame.Rect(10, 10, 140, 32)
 cancel_box = pygame.Rect(10, 50, 90, 32)
 address_box = pygame.Rect(10, 400, 580, 32)
+index_box = pygame.Rect(10, 350, 100, 32)
 color_inactive = pygame.Color('lightskyblue3')
 color_active = pygame.Color('dodgerblue2')
 color2 = pygame.Color('firebrick')
 color3 = pygame.Color('darkviolet')
+color4 = pygame.Color('deeppink')
 color = color_inactive
 active = False
+show_index = False
 text = ''
+index = ''
 map_file = get_picture(coords1, coords2, scale, card_type)
 # Рисуем картинку, загружаемую из только что созданного файла.
 screen.blit(pygame.image.load(map_file), (0, 0))
@@ -136,12 +145,14 @@ while running:
                 text = ''
                 address = ''
                 map_file = get_picture(coords1, coords2, scale, card_type)
+            elif index_box.collidepoint(event.pos):
+                show_index = not show_index
             else:
                 active = False
         if event.type == pygame.KEYDOWN:
             if active:
                 if event.key == pygame.K_KP_ENTER:
-                    map_file, coords1, coords2, address = get_picture_from_name(text, scale, card_type)
+                    map_file, coords1, coords2, address, index = get_picture_from_name(text, scale, card_type)
                     point_coords1 = coords1
                     point_coords2 = coords2
                     text = ''
@@ -152,7 +163,11 @@ while running:
     # Render the current text.
     txt_surface = font.render(text, True, color)
     cancel_surface = font.render('Сброс', True, color2)
-    address_surface = font.render(address, True, color3)
+    if show_index:
+        address_surface = font.render(address + ',' + index, True, color3)
+    else:
+        address_surface = font.render(address, True, color3)
+    index_surface = font.render('Индекс', True, color4)
     # Resize the box if the text is too long.
     width = max(200, txt_surface.get_width() + 10)
     input_box.w = width
@@ -163,10 +178,12 @@ while running:
     screen.blit(cancel_surface, (cancel_box.x + 5, cancel_box.y + 5))
     screen.blit(txt_surface, (input_box.x + 5, input_box.y + 5))
     screen.blit(address_surface, (address_box.x + 5, address_box.y + 5))
+    screen.blit(index_surface, (index_box.x + 5, index_box.y + 5))
     # Blit the input_box rect.
     pygame.draw.rect(screen, color, input_box, 2)
     pygame.draw.rect(screen, color2, cancel_box, 2)
     pygame.draw.rect(screen, color3, address_box, 2)
+    pygame.draw.rect(screen, color4, index_box, 2)
     pygame.display.flip()
 pygame.quit()
 
