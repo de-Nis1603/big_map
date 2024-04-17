@@ -13,11 +13,14 @@ def get_picture(coords1, coords2, scale, card_type):
         map_request = f"http://static-maps.yandex.ru/1.x/?ll={coords1},{coords2}&spn={scale},{scale}&l={card_type}&pt={point_coords1},{point_coords2},pm2rdm"
     else:
         map_request = f"http://static-maps.yandex.ru/1.x/?ll={coords1},{coords2}&spn={scale},{scale}&l={card_type}"
-    response = requests.get(map_request)
-    map_file = "map.png"
-    with open(map_file, "wb") as file:
-        file.write(response.content)
-    return map_file
+    try:
+        response = requests.get(map_request)
+        map_file = "map.png"
+        with open(map_file, "wb") as file:
+            file.write(response.content)
+        return map_file
+    except Exception:
+        return 'not found'
 
 def get_picture_with_pointer(coords1, coords2, scale, card_type):
     map_request = f"http://static-maps.yandex.ru/1.x/?ll={coords1},{coords2}&spn={scale},{scale}&l={card_type}&pt={coords1},{coords2},pm2rdm"
@@ -36,24 +39,27 @@ def get_picture_from_name(toponym_to_find, scale, card_type):
     response = requests.get(geocoder_api_server, params=geocoder_params)
     if not response:
         # обработка ошибочной ситуации
-        pass
+        return
     # Преобразуем ответ в json-объект
-    json_response = response.json()
-    print(json_response)
-    # Получаем первый топоним из ответа геокодера.
-    toponym = json_response["response"]["GeoObjectCollection"][
-        "featureMember"][0]["GeoObject"]
-    toponym_address = toponym["metaDataProperty"]["GeocoderMetaData"]["text"]
     try:
-        toponym_index = toponym["metaDataProperty"]["GeocoderMetaData"]["Address"]['postal_code']
+        json_response = response.json()
+        print(json_response)
+        # Получаем первый топоним из ответа геокодера.
+        toponym = json_response["response"]["GeoObjectCollection"][
+        "featureMember"][0]["GeoObject"]
+        toponym_address = toponym["metaDataProperty"]["GeocoderMetaData"]["text"]
+        try:
+            toponym_index = toponym["metaDataProperty"]["GeocoderMetaData"]["Address"]['postal_code']
+        except Exception:
+            toponym_index = 'не найден'
+        # Координаты центра топонима:
+        toponym_coodrinates = toponym["Point"]["pos"]
+        # Долгота и широта:
+        toponym_longitude, toponym_lattitude = toponym_coodrinates.split(" ")
+        return get_picture_with_pointer(toponym_longitude, toponym_lattitude, scale, card_type),\
+            float(toponym_longitude), float(toponym_lattitude), toponym_address, toponym_index
     except Exception:
-        toponym_index = 'не найден'
-    # Координаты центра топонима:
-    toponym_coodrinates = toponym["Point"]["pos"]
-    # Долгота и широта:
-    toponym_longitude, toponym_lattitude = toponym_coodrinates.split(" ")
-    return get_picture_with_pointer(toponym_longitude, toponym_lattitude, scale, card_type), float(toponym_longitude), float(toponym_lattitude), toponym_address, toponym_index
-
+        return
 def lonlat_distance(a, b):
 
     degree_to_meters_factor = 111 * 1000 # 111 километров в метрах
@@ -151,15 +157,20 @@ while running:
                 active = False
         if event.type == pygame.KEYDOWN:
             if active:
-                if event.key == pygame.K_KP_ENTER:
-                    map_file, coords1, coords2, address, index = get_picture_from_name(text, scale, card_type)
-                    point_coords1 = coords1
-                    point_coords2 = coords2
-                    text = ''
+                if event.key == pygame.K_EQUALS:
+                    response = get_picture_from_name(text, scale, card_type)
+                    print(response)
+                    if response:
+                        print('z')
+                        map_file, coords1, coords2, address, index = get_picture_from_name(text, scale, card_type)
+                        point_coords1 = coords1
+                        point_coords2 = coords2
+                        text = ''
                 elif event.key == pygame.K_BACKSPACE:
                     text = text[:-1]
                 else:
-                    text += event.unicode
+                    if event.unicode.isalpha() or event.unicode.isdigit() or event.unicode in ',. /:;"()-':
+                        text += event.unicode
     # Render the current text.
     txt_surface = font.render(text, True, color)
     cancel_surface = font.render('Сброс', True, color2)
